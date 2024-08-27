@@ -6,19 +6,39 @@
   "types": "dist/index.d.ts",
   "exports": {
     ".": {
-      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
-      "types": "./dist/index.d.ts"
+      "require": "./dist/index.js"
     }
   },
   "files": [
     "dist"
   ],
+  "keywords": [
+    "webview",
+    "environment",
+    "user-agent",
+    "browser-detection",
+    "os-detection"
+  ],
+  "author": "minai621",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/minai621/webviewkit.git"
+  },
+  "bugs": {
+    "url": "https://github.com/minai621/webviewkit/issues"
+  },
+  "homepage": "https://github.com/minai621/webviewkit#readme",
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
     "test": "jest --config ./jest.config.ts",
-    "lint": "eslint src/**/*.ts"
+    "lint": "eslint src/**/*.ts",
+    "changeset": "changeset",
+    "version": "changeset version",
+    "release": "pnpm run build && changeset publish"
   },
   "devDependencies": {
     "jest": "^29.7.0",
