@@ -1,3 +1,7 @@
+import { detectBrowser } from "@/detectors/browserDetector";
+import { detectDevice } from "@/detectors/deviceDetector";
+import { detectOS } from "@/detectors/osDetector";
+import { detectWebView } from "@/detectors/webviewDetector";
 import {
   BrowserInfo,
   DeviceInfo,
@@ -14,80 +18,12 @@ class Environment {
   }
 
   private detectEnvironment(userAgent: UserAgent): EnvironmentInfo {
-    const os = this.detectOS(userAgent);
-    const browser = this.detectBrowser(userAgent);
-    const device = this.detectDevice(userAgent);
-    const isWebView = this.detectWebView(userAgent);
-
     return {
-      os,
-      browser,
-      device,
-      isWebView,
+      os: detectOS(userAgent),
+      browser: detectBrowser(userAgent),
+      device: detectDevice(userAgent),
+      isWebView: detectWebView(userAgent),
     };
-  }
-
-  private detectOS(userAgent: UserAgent): OSInfo {
-    if (/Windows/i.test(userAgent)) {
-      const version =
-        userAgent.match(/Windows NT (\d+\.\d+)/)?.[1] || "Unknown";
-      return { name: "Windows", version };
-    } else if (/Mac OS X/i.test(userAgent)) {
-      const version =
-        userAgent.match(/Mac OS X (\d+[._]\d+)/)?.[1].replace("_", ".") ||
-        "Unknown";
-      return { name: "macOS", version };
-    } else if (/Android/i.test(userAgent)) {
-      const version = userAgent.match(/Android (\d+\.\d+)/)?.[1] || "Unknown";
-      return { name: "Android", version };
-    } else if (/iOS/i.test(userAgent)) {
-      const version =
-        userAgent.match(/OS (\d+_\d+)/)?.[1].replace("_", ".") || "Unknown";
-      return { name: "iOS", version };
-    } else if (/Linux/i.test(userAgent)) {
-      return { name: "Linux", version: "Unknown" };
-    }
-    return { name: "Unknown", version: "Unknown" };
-  }
-
-  private detectBrowser(userAgent: UserAgent): BrowserInfo {
-    if (/Chrome/i.test(userAgent)) {
-      const version = userAgent.match(/Chrome\/(\d+\.\d+)/)?.[1] || "Unknown";
-      return { name: "Chrome", version };
-    } else if (/Firefox/i.test(userAgent)) {
-      const version = userAgent.match(/Firefox\/(\d+\.\d+)/)?.[1] || "Unknown";
-      return { name: "Firefox", version };
-    } else if (/Safari/i.test(userAgent)) {
-      const version = userAgent.match(/Version\/(\d+\.\d+)/)?.[1] || "Unknown";
-      return { name: "Safari", version };
-    } else if (/MSIE|Trident/i.test(userAgent)) {
-      const version =
-        userAgent.match(/(?:MSIE |rv:)(\d+\.\d+)/)?.[1] || "Unknown";
-      return { name: "Internet Explorer", version };
-    }
-    return { name: "Unknown", version: "Unknown" };
-  }
-
-  private detectDevice(userAgent: UserAgent): DeviceInfo {
-    if (/Mobile/i.test(userAgent)) {
-      if (/iPad/i.test(userAgent)) {
-        return { type: "tablet" };
-      } else if (/iPhone/i.test(userAgent)) {
-        return { type: "mobile" };
-      }
-      return { type: "mobile" };
-    } else if (/Tablet/i.test(userAgent)) {
-      return { type: "tablet" };
-    } else if (/Android/i.test(userAgent)) {
-      return { type: "mobile" };
-    } else if (/Windows Phone/i.test(userAgent)) {
-      return { type: "mobile" };
-    }
-    return { type: "desktop" };
-  }
-
-  private detectWebView(userAgent: UserAgent): boolean {
-    return /WebView|wv/i.test(userAgent);
   }
 
   get os(): OSInfo {
