@@ -3,7 +3,14 @@
     "target": "ESNext",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
-    "rootDir": ".",
+    "baseUrl": "./src",
+    "paths": {
+      "@/*": ["*"],
+      "@constants/*": ["constants/*"],
+      "@utils/*": ["utils/*"],
+      "@types/*": ["types/*"],
+      "@detectors/*": ["detectors/*"]
+    },
     "lib": ["ES2018", "DOM"],
     "declaration": true,
     "declarationMap": true,
