@@ -1,7 +1,7 @@
 export const REG_EXP = {
   WINDOWS: /Windows/i,
   MACOS: /Mac OS X/i,
-  IOS: /iOS/i,
+  IOS: /(iPhone|iPad|iPod)/i,
   ANDROID: /Android/i,
   LINUX: /Linux/i,
   CHROME: /Chrome/i,
