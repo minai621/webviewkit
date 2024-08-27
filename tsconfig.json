@@ -11,6 +11,6 @@
     "allowJs": true,
     "resolveJsonModule": true
   },
-  "include": ["commitlint.config.mjs", "eslint.config.mjs", "tsconfig.json"],
+  "include": ["tsconfig.json"],
   "exclude": ["node_modules", "dist"]
 }
