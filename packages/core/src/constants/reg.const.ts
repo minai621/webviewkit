@@ -8,6 +8,7 @@ export const REG_EXP = {
   FIREFOX: /Firefox/i,
   SAFARI: /Safari/i,
   IE: /MSIE|Trident/i,
+  TV: /smart-tv|smarttv|googletv|appletv|hbbtv|pov_tv|netcast.tv/i,
   EDGE: /Edge/i,
   OPERA: /Opera|OPR/i,
   MOBILE: /Mobile/i,
