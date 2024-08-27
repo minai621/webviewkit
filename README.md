@@ -1,81 +1,58 @@
-# Turborepo starter
+# WebViewKit
 
-This is an official starter Turborepo.
+WebViewKit is a collection of TypeScript libraries designed to enhance and simplify the development of applications that utilize WebView technology. Our goal is to provide developers with powerful tools to detect, analyze, and optimize their WebView-based applications.
 
-## Using this example
+## Packages
 
-Run the following command:
+Currently, WebViewKit consists of the following package:
 
-```sh
-npx create-turbo@latest
+### [@webviewkit/environment](./packages/environment)
+
+A lightweight TypeScript library for detecting and analyzing user environments, including operating systems, browsers, and devices. It's particularly useful for identifying WebView environments.
+
+[![npm version](https://badge.fury.io/js/%40webviewkit%2Fenvironment.svg)](https://badge.fury.io/js/%40webviewkit%2Fenvironment)
+
+#### Features:
+
+- Accurate detection of operating systems, browsers, and device types
+- Specialized WebView detection
+- TypeScript support with comprehensive type definitions
+- Easy-to-use API for retrieving environment information
+
+For more details, check out the [@webviewkit/environment README](./packages/environment/README.md).
+
+## Getting Started
+
+To get started with WebViewKit, you can install the packages you need using npm, yarn, or pnpm:
+
+```bash
+npm install @webviewkit/environment
+# or
+yarn add @webviewkit/environment
+# or
+pnpm add @webviewkit/environment
 ```
 
-## What's inside?
+## Contributing
 
-This Turborepo includes the following packages/apps:
+We welcome contributions to WebViewKit! If you're interested in contributing, please:
 
-### Apps and Packages
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
+Please make sure to update tests as appropriate and adhere to the code style of the project.
 
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
+## License
 
-### Utilities
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-This Turborepo has some additional tools already setup for you:
+## Contact
 
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
+If you have any questions, feel free to reach out or open an issue in the GitHub repository.
 
-### Build
+---
 
-To build all apps and packages, run the following command:
-
-```
-cd my-turborepo
-pnpm build
-```
-
-### Develop
-
-To develop all apps and packages, run the following command:
-
-```
-cd my-turborepo
-pnpm dev
-```
-
-### Remote Caching
-
-Turborepo can use a technique known as [Remote Caching](https://turbo.build/repo/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
-
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup), then enter the following commands:
-
-```
-cd my-turborepo
-npx turbo login
-```
-
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
-
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
-
-```
-npx turbo link
-```
-
-## Useful Links
-
-Learn more about the power of Turborepo:
-
-- [Tasks](https://turbo.build/repo/docs/core-concepts/monorepos/running-tasks)
-- [Caching](https://turbo.build/repo/docs/core-concepts/caching)
-- [Remote Caching](https://turbo.build/repo/docs/core-concepts/remote-caching)
-- [Filtering](https://turbo.build/repo/docs/core-concepts/monorepos/filtering)
-- [Configuration Options](https://turbo.build/repo/docs/reference/configuration)
-- [CLI Usage](https://turbo.build/repo/docs/reference/command-line-reference)
+Happy coding with WebViewKit!
