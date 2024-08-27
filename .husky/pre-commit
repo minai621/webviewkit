@@ -1,3 +1,3 @@
 pnpm run lint
-cd packages/core
+cd packages/environment
 pnpm run test

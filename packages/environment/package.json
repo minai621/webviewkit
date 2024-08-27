@@ -1,5 +1,5 @@
 {
-  "name": "webviewkit",
+  "name": "@webviewkit/environment",
   "version": "1.0.0",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
@@ -17,7 +17,7 @@
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
-    "test": "jest --passWithNoTests --config ./jest.config.ts",
+    "test": "jest --config ./jest.config.ts",
     "lint": "eslint src/**/*.ts"
   },
   "devDependencies": {
@@ -28,11 +28,6 @@
     "ts-node": "^10.9.2",
     "tsup": "^8.2.4",
     "typescript": "^5.5.4"
-  },
-  "config": {
-    "commitizen": {
-      "path": "cz-conventional-changelog"
-    }
   },
   "engines": {
     "node": ">=18"

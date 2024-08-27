@@ -6,6 +6,7 @@
     "baseUrl": "./src",
     "paths": {
       "@/*": ["*"],
+      "@class/*": ["class/*"],
       "@constants/*": ["constants/*"],
       "@utils/*": ["utils/*"],
       "@types/*": ["types/*"],
