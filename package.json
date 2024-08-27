@@ -15,7 +15,7 @@
   "devDependencies": {
     "prettier": "^3.2.5",
     "turbo": "^2.1.0",
-    "typescript": "^5.4.5",  
+    "typescript": "^5.4.5",
     "@changesets/cli": "^2.27.7",
     "@commitlint/cli": "^19.4.0",
     "@commitlint/config-conventional": "^19.2.2",
@@ -29,6 +29,11 @@
     "husky": "^9.1.5",
     "@commitlint/types": "^19.0.3",
     "@types/eslint": "^9.6.1"
+  },
+  "config": {
+    "commitizen": {
+      "path": "cz-conventional-changelog"
+    }
   },
   "packageManager": "pnpm@8.15.6",
   "engines": {
