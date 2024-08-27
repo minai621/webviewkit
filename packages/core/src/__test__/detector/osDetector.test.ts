@@ -1,5 +1,5 @@
 import { OS_NAMES, UNKNOWN } from "../../constants";
-import { detectOS } from "../../detector/osDetector";
+import { detectOS } from "../../detectors/osDetector";
 
 describe("detectOS", () => {
   it("should detect Windows", () => {
