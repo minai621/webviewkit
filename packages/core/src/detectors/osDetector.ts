@@ -1,12 +1,12 @@
 // osDetector.ts
-import { OSInfo, UserAgent } from "../class/Environment.type";
-import { OS_NAMES, REG_EXP, UNKNOWN } from "../constants";
+import { OSInfo, UserAgent } from "@/class/Environment.type";
+import { OS_NAMES, REG_EXP, UNKNOWN } from "@/constants";
 import {
   parseAndroidVersion,
   parseIOSVersion,
   parseMacOSVersion,
   parseWindowsVersion,
-} from "../utils/osVersionParser";
+} from "@/utils/osVersionParser";
 
 export function detectOS(userAgent: UserAgent): OSInfo {
   if (REG_EXP.WINDOWS.test(userAgent)) {

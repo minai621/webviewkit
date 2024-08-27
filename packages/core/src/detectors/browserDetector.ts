@@ -1,11 +1,11 @@
-import { BrowserInfo, UserAgent } from "../class/Environment.type";
-import { BROWSER_NAMES, REG_EXP, UNKNOWN } from "../constants";
+import { BrowserInfo, UserAgent } from "@/class/Environment.type";
+import { BROWSER_NAMES, REG_EXP, UNKNOWN } from "@/constants";
 import {
   parseChromeVersion,
   parseFirefoxVersion,
   parseInternetExplorerVersion,
   parseSafariVersion,
-} from "../utils/browserVersionParser";
+} from "@/utils/browserVersionParser";
 
 export function detectBrowser(userAgent: UserAgent): BrowserInfo {
   if (REG_EXP.CHROME.test(userAgent)) {

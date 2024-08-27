@@ -1,10 +1,10 @@
-import { UNKNOWN } from "../../constants";
+import { UNKNOWN } from "@/constants";
 import {
   parseChromeVersion,
   parseFirefoxVersion,
   parseInternetExplorerVersion,
   parseSafariVersion,
-} from "../../utils/browserVersionParser";
+} from "@/utils/browserVersionParser";
 
 describe("parseChromeVersion", () => {
   it("should parse Chrome version correctly", () => {

@@ -1,5 +1,5 @@
-import { BROWSER_NAMES, UNKNOWN } from "../../constants";
-import { detectBrowser } from "../../detectors/browserDetector";
+import { BROWSER_NAMES, UNKNOWN } from "@/constants";
+import { detectBrowser } from "@/detectors/browserDetector";
 
 describe("detectBrowser", () => {
   it("should detect Chrome browser", () => {

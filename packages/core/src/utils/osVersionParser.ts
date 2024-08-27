@@ -1,4 +1,4 @@
-import { UNKNOWN } from "../constants";
+import { UNKNOWN } from "@/constants";
 
 export const parseWindowsVersion = (userAgent: string): string => {
   const match = userAgent.match(/Windows NT (\d+\.\d+)/);

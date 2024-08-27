@@ -1,4 +1,4 @@
-import { UserAgent } from "../class/Environment.type";
+import { UserAgent } from "@/class/Environment.type";
 
 export interface Detector<T> {
   detect: (userAgent: UserAgent) => T;

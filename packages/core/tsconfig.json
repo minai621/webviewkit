@@ -3,7 +3,7 @@
     "target": "ESNext",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
-    "baseUrl": "packages/core/src",
+    "baseUrl": "./src",
     "paths": {
       "@/*": ["*"],
       "@constants/*": ["constants/*"],

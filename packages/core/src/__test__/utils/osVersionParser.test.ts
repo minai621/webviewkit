@@ -1,11 +1,11 @@
 // osVersionParser.test.ts
-import { UNKNOWN } from "../../constants";
+import { UNKNOWN } from "@/constants";
 import {
   parseAndroidVersion,
   parseIOSVersion,
   parseMacOSVersion,
   parseWindowsVersion,
-} from "../../utils/osVersionParser";
+} from "@/utils/osVersionParser";
 
 describe("parseWindowsVersion", () => {
   it("should parse Windows version correctly", () => {

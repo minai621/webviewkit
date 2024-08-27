@@ -1,4 +1,4 @@
-import { UNKNOWN, VERSION_PATTERNS } from "../constants";
+import { UNKNOWN, VERSION_PATTERNS } from "@/constants";
 
 export const parseChromeVersion = (userAgent: string): string => {
   const match = userAgent.match(VERSION_PATTERNS.CHROME);
