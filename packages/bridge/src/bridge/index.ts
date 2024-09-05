@@ -1,34 +1,26 @@
-import { Bridge } from "./Bridge";
+import Bridge from "./Bridge";
 import type {
-  BridgeHandler,
-  BridgeRequest,
-  BridgeResponse,
-  Interceptor,
-  MessageSender,
-  PlatformSpecificMethod,
+  DefaultBridgeMessage,
+  HandlerParamsType,
+  HandlerReturnType,
+  IBridge,
+  RequestHandler,
+  RequestHandlers,
+  ResponseHandler,
+  ResponseHandlers,
+  SemverVersion,
 } from "./Bridge.type";
+import { DefaultBridgeError } from "./DefaultBridgeError";
 
-export { Bridge };
-
+export { Bridge, DefaultBridgeError };
 export type {
-  BridgeHandler,
-  BridgeRequest,
-  BridgeResponse,
-  Interceptor,
-  MessageSender,
-  PlatformSpecificMethod,
+  DefaultBridgeMessage,
+  HandlerParamsType,
+  HandlerReturnType,
+  IBridge,
+  RequestHandler,
+  RequestHandlers,
+  ResponseHandler,
+  ResponseHandlers,
+  SemverVersion,
 };
-
-export function createBridge<
-  TMethods extends Record<string, PlatformSpecificMethod>,
->(options: {
-  methods: TMethods;
-  messageSender: MessageSender;
-  bridgeHandler: BridgeHandler;
-}): Bridge<TMethods> {
-  return new Bridge<TMethods>({
-    methods: options.methods,
-    messageSender: options.messageSender,
-    bridgeHandler: options.bridgeHandler,
-  });
-}

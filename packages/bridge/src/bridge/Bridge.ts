@@ -1,98 +1,99 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+import { DefaultBridgeError, DefaultBridgeMessage } from ".";
 import {
-  BridgeHandler,
-  BridgeOptions,
-  BridgeRequest,
-  Interceptor,
-  MessageSender,
-  PlatformSpecificMethod,
+  HandlerParamsType,
+  HandlerReturnType,
+  IBridge,
+  RequestHandlers,
+  ResponseHandlers,
+  SemverVersion,
 } from "./Bridge.type";
 
-export class Bridge<TMethods extends Record<string, PlatformSpecificMethod>> {
-  private readonly methods: TMethods;
-  private readonly messageSender: MessageSender;
-  private readonly bridgeHandler: BridgeHandler;
+class Bridge<
+  TRequestHandlers extends RequestHandlers,
+  TResponseHandlers extends ResponseHandlers,
+> {
+  public version: SemverVersion;
+  private config: IBridge<TRequestHandlers, TResponseHandlers>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private responseListeners: Map<string, Set<(payload: any) => void>> =
+    new Map();
 
-  constructor(options: BridgeOptions<TMethods>) {
-    this.methods = options.methods;
-    this.messageSender = options.messageSender;
-    this.bridgeHandler = options.bridgeHandler;
+  constructor(config: IBridge<TRequestHandlers, TResponseHandlers>) {
+    this.config = config;
+    this.version = config.version;
+    this.initMessageListener();
   }
 
-  call = async <TMethod extends keyof TMethods>(
-    method: TMethod,
-    params?: Parameters<TMethods[TMethod]>[0],
-    interceptors?: Interceptor<Parameters<TMethods[TMethod]>[0]>[]
-  ): Promise<ReturnType<TMethods[TMethod]>> => {
-    const request: BridgeRequest<Parameters<TMethods[TMethod]>[0]> = {
-      id: this.generateRequestId(),
-      method: method as string,
-      params,
-    };
-
-    const interceptedRequest = await this.applyInterceptors(
-      request,
-      interceptors
-    );
-    return this.dispatchMethod(interceptedRequest);
-  };
-
-  private generateRequestId = (): string => {
-    return Math.random().toString(36).substring(7);
-  };
-
-  private dispatchMethod = <TParams, TResult>(
-    request: BridgeRequest<TParams>
-  ): Promise<TResult> => {
-    const executor = this.methods[request.method as keyof TMethods];
-
-    if (!executor) {
-      throw new Error(`No method found for ${request.method}`);
+  request<T extends keyof TRequestHandlers>(
+    type: T,
+    params: HandlerParamsType<TRequestHandlers[T], typeof this.version>
+  ): Promise<HandlerReturnType<TRequestHandlers[T], typeof this.version>> {
+    const handler =
+      this.config.requestHandlers[type]?.[this.version] ||
+      this.config.requestHandlers[type]?.["default"];
+    if (!handler) {
+      throw new DefaultBridgeError(`No handler for type ${String(type)}`);
     }
+    return handler(params);
+  }
 
-    return executor(request.params) as Promise<TResult>;
-  };
-
-  private applyInterceptors = async <TParams>(
-    request: BridgeRequest<TParams>,
-    interceptors?: Interceptor<TParams>[]
-  ): Promise<BridgeRequest<TParams>> => {
-    if (!interceptors || interceptors.length === 0) {
-      return request;
+  addResponseListener<T extends keyof TResponseHandlers>(
+    type: T,
+    listener: (
+      payload: HandlerParamsType<TResponseHandlers[T], typeof this.version>
+    ) => void
+  ) {
+    if (!this.responseListeners.has(type as string)) {
+      this.responseListeners.set(type as string, new Set());
     }
+    this.responseListeners.get(type as string)!.add(listener);
+  }
 
-    const applyInterceptor = async (
-      interceptedRequest: BridgeRequest<TParams>,
-      interceptor: Interceptor<TParams>
-    ): Promise<BridgeRequest<TParams>> => interceptor(interceptedRequest);
-
-    let interceptedRequest = request;
-    for (const interceptor of interceptors) {
-      interceptedRequest = await applyInterceptor(
-        interceptedRequest,
-        interceptor
-      );
+  removeResponseListener<T extends keyof TResponseHandlers>(
+    type: T,
+    listener: (
+      payload: HandlerParamsType<TResponseHandlers[T], typeof this.version>
+    ) => void
+  ) {
+    const listeners = this.responseListeners.get(type as string);
+    if (listeners) {
+      listeners.delete(listener);
     }
+  }
 
-    return interceptedRequest;
-  };
+  private initMessageListener() {
+    window.addEventListener("message", this.handleMessage.bind(this));
+  }
 
-  handleNativeCall = (
-    methodName: keyof TMethods,
-    params: any
-  ): Promise<any> => {
-    return this.call(methodName, params);
-  };
+  private handleMessage(event: MessageEvent) {
+    try {
+      const { type, payload } = JSON.parse(event.data) as DefaultBridgeMessage;
+      const handler =
+        this.config.responseHandlers[type]?.[this.version] ||
+        this.config.responseHandlers[type]?.["default"];
 
-  initialize = (): void => {
-    this.bridgeHandler((methodName: string, params: any) => {
-      this.handleNativeCall(methodName as keyof TMethods, params)
-        .then((result) => {
-          this.messageSender(JSON.stringify({ result }));
-        })
-        .catch((error) => {
-          this.messageSender(JSON.stringify({ error: error.message }));
-        });
-    });
-  };
+      if (handler) {
+        const result = handler(payload);
+
+        const listeners = this.responseListeners.get(type);
+        if (listeners) {
+          listeners.forEach((listener) => listener(result));
+        }
+      } else {
+        throw new DefaultBridgeError(`No handler for type ${String(type)}`);
+      }
+    } catch (error) {
+      if (error instanceof Error) {
+        if (this.config.errorHandlers?.default) {
+          const defaultBridgeError: DefaultBridgeError = {
+            name: "DefaultBridgeError",
+            message: error.message,
+          };
+          this.config.errorHandlers.default(defaultBridgeError);
+        }
+      }
+    }
+  }
 }
+
+export default Bridge;
