@@ -1,10 +1,10 @@
 # WebViewKit
 
-WebViewKit is a collection of TypeScript libraries designed to enhance and simplify the development of applications that utilize WebView technology. Our goal is to provide developers with powerful tools to detect, analyze, and optimize their WebView-based applications.
+WebViewKit is a collection of TypeScript libraries designed to enhance and simplify the development of applications that utilize WebView technology. Our goal is to provide developers with powerful tools to detect, analyze, optimize, and bridge communication in their WebView-based applications.
 
 ## Packages
 
-Currently, WebViewKit consists of the following package:
+WebViewKit currently consists of the following packages:
 
 ### [@webviewkit/environment](./packages/environment)
 
@@ -21,16 +21,33 @@ A lightweight TypeScript library for detecting and analyzing user environments, 
 
 For more details, check out the [@webviewkit/environment README](./packages/environment/README.md).
 
+### [@webviewkit/bridge](./packages/bridge)
+
+A flexible and type-safe TypeScript library for facilitating communication between WebView and native platforms in hybrid mobile applications.
+
+[![npm version](https://badge.fury.io/js/%40webviewkit%2Fbridge.svg)](https://badge.fury.io/js/%40webviewkit%2Fbridge)
+
+#### Features:
+
+- Type-safe communication between WebView and native platforms
+- Intelligent version-aware API handling
+- Support for iOS, Android, and React Native
+- Customizable error handling
+- Flexible request and response handlers
+- Automatic selection of the most appropriate handler based on semantic versioning
+
+For more details, check out the [@webviewkit/bridge README](./packages/bridge/README.md).
+
 ## Getting Started
 
 To get started with WebViewKit, you can install the packages you need using npm, yarn, or pnpm:
 
 ```bash
-npm install @webviewkit/environment
+npm install @webviewkit/environment @webviewkit/bridge
 # or
-yarn add @webviewkit/environment
+yarn add @webviewkit/environment @webviewkit/bridge
 # or
-pnpm add @webviewkit/environment
+pnpm add @webviewkit/environment @webviewkit/bridge
 ```
 
 ## Contributing
