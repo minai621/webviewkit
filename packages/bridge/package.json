@@ -1,5 +1,8 @@
 {
   "name": "@webviewkit/bridge",
+  "publishConfig": {
+    "access": "public"
+  },
   "version": "1.0.0",
   "description": "A bridge library for WebView and Native communication",
   "main": "dist/index.js",
