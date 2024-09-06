@@ -12,6 +12,7 @@ import type {
 } from "./Bridge.type";
 import { DefaultBridgeError } from "./DefaultBridgeError";
 
+export { createBridgeWithVersion } from "./createBridge";
 export { Bridge, DefaultBridgeError };
 export type {
   DefaultBridgeMessage,
