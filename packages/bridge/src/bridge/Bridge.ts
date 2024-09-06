@@ -1,3 +1,4 @@
+import { findBestHandlerVersion } from "@/utils/version";
 import { DefaultBridgeError, DefaultBridgeMessage } from ".";
 import {
   HandlerParamsType,
@@ -28,9 +29,13 @@ class Bridge<
     type: T,
     params: HandlerParamsType<TRequestHandlers[T], typeof this.version>
   ): Promise<HandlerReturnType<TRequestHandlers[T], typeof this.version>> {
-    const handler =
-      this.config.requestHandlers[type]?.[this.version] ||
-      this.config.requestHandlers[type]?.["default"];
+    const handlerVersion = findBestHandlerVersion(
+      this.config.requestHandlers[type],
+      this.version
+    );
+
+    const handler = this.config.requestHandlers[type][handlerVersion];
+
     if (!handler) {
       throw new DefaultBridgeError(`No handler for type ${String(type)}`);
     }

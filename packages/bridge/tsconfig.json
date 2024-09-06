@@ -6,7 +6,8 @@
     "baseUrl": "./src",
     "paths": {
       "@/*": ["*"],
-      "@bridge/*": ["bridge/*"]
+      "@bridge/*": ["bridge/*"],
+      "@utils/*": ["utils/*"]
     },
     "lib": ["ESNext", "DOM"],
     "declaration": true,
