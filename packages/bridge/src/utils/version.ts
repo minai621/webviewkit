@@ -1,30 +1,36 @@
+import { VersionedMethodBase } from "@/bridge/Bridge.type";
 import { SemverVersion } from "..";
 
-export function compareVersions(v1: SemverVersion, v2: SemverVersion): number {
-  const parts1 = v1.split(".").map(Number);
-  const parts2 = v2.split(".").map(Number);
+export function compareVersions(
+  v1: SemverVersion,
+  v2: SemverVersion
+): -1 | 0 | 1 {
+  if (v1 === "default") return -1;
+  if (v2 === "default") return 1;
 
-  for (let i = 0; i < 3; i++) {
-    if (parts1[i] > parts2[i]) return 1;
-    if (parts1[i] < parts2[i]) return -1;
-  }
+  const [major1, minor1, patch1] = v1.split(".").map(Number);
+  const [major2, minor2, patch2] = v2.split(".").map(Number);
+
+  if (major1 !== major2) return major1 > major2 ? 1 : -1;
+  if (minor1 !== minor2) return minor1 > minor2 ? 1 : -1;
+  if (patch1 !== patch2) return patch1 > patch2 ? 1 : -1;
   return 0;
 }
 
-export function findBestHandlerVersion<T>(
-  handlers: Record<string, T>,
-  currentVersion: SemverVersion
-): SemverVersion | "default" {
-  const versions = Object.keys(handlers).filter(
-    (v) => v !== "default"
-  ) as SemverVersion[];
-  versions.sort((a, b) => compareVersions(b, a));
-
-  for (const version of versions) {
-    if (compareVersions(currentVersion, version) >= 0) {
-      return version;
-    }
-  }
-
-  return "default";
+export function selectBestVersion<T extends VersionedMethodBase>(
+  availableVersions: (keyof T & string)[],
+  userVersion: SemverVersion
+): keyof T & string {
+  return availableVersions.reduce(
+    (best, current) => {
+      if (
+        compareVersions(current as SemverVersion, userVersion) <= 0 &&
+        compareVersions(current as SemverVersion, best as SemverVersion) > 0
+      ) {
+        return current;
+      }
+      return best;
+    },
+    "default" as keyof T & string
+  );
 }

@@ -1,67 +1,109 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { DefaultBridgeError } from "./DefaultBridgeError";
-
 export type SemverVersion = `${number}.${number}.${number}` | "default";
 
-export type RequestHandler<T, R> = (params: T) => Promise<R>;
-export type ResponseHandler<T, R> = (params: T) => R;
-
-export type VersionedHandlers<T> = {
-  [V in SemverVersion]: T;
-};
-
-export type RequestHandlers = {
-  [K: string]: VersionedHandlers<RequestHandler<any, any>>;
-};
-
-export type ResponseHandlers = {
-  [K: string]: VersionedHandlers<ResponseHandler<any, any>>;
-};
-
-export type HandlerParamsType<T, V extends SemverVersion> =
-  T extends VersionedHandlers<infer R>
-    ? R extends RequestHandler<infer P, any> | ResponseHandler<infer P, any>
-      ? V extends keyof T
-        ? T[V] extends
-            | RequestHandler<infer VP, any>
-            | ResponseHandler<infer VP, any>
-          ? VP
-          : P
-        : P
-      : never
-    : never;
-
-export type HandlerReturnType<T, V extends SemverVersion> =
-  T extends VersionedHandlers<infer R>
-    ? R extends RequestHandler<any, infer RT> | ResponseHandler<any, infer RT>
-      ? V extends keyof T
-        ? T[V] extends
-            | RequestHandler<any, infer VRT>
-            | ResponseHandler<any, infer VRT>
-          ? VRT
-          : RT
-        : RT
-      : never
-    : never;
-
-export interface IBridge<
-  TRequestHandlers extends RequestHandlers,
-  TResponseHandlers extends ResponseHandlers,
-> {
-  version: SemverVersion;
-  bridges: {
-    [K in "ios" | "android" | "ReactNative"]: {
-      postMessage: (payload: string) => void;
-    };
+export interface VersionedMethodBase {
+  default: {
+    params: unknown;
+    result: unknown;
   };
-  requestHandlers: TRequestHandlers;
-  responseHandlers: TResponseHandlers;
-  errorHandlers: {
-    [key: string]: (error: DefaultBridgeError) => void;
+  [version: string]: {
+    params: unknown;
+    result: unknown;
   };
 }
 
-export interface DefaultBridgeMessage<T = any> {
-  type: string;
-  payload: T;
+export interface IRequestTypes {
+  [methodName: string]: VersionedMethodBase;
+}
+
+export type RequestParams<
+  T extends IRequestTypes,
+  M extends keyof T,
+  V extends keyof T[M] & SemverVersion,
+> = T[M][V] extends { params: infer P } ? P : never;
+
+export type RequestResult<
+  T extends IRequestTypes,
+  M extends keyof T,
+  V extends keyof T[M] & SemverVersion,
+> = T[M][V] extends { result: infer R } ? R : never;
+
+export type VersionedRequest<T extends IRequestTypes, M extends keyof T> = {
+  [V in keyof T[M] & SemverVersion]: {
+    version: V;
+    params: RequestParams<T, M, V>;
+  };
+}[keyof T[M] & SemverVersion];
+
+export type VersionedResponse<T extends IRequestTypes, M extends keyof T> = {
+  [V in keyof T[M] & SemverVersion]: {
+    version: V;
+    result: RequestResult<T, M, V>;
+  };
+}[keyof T[M] & SemverVersion];
+
+export interface VersionedEventBase<T = any> {
+  default: T;
+  [version: string]: T;
+}
+
+export interface IEventTypes {
+  [eventName: string]: VersionedEventBase;
+}
+
+export type EventResponse<
+  E extends IEventTypes,
+  K extends keyof E,
+  V extends keyof E[K] = keyof E[K],
+> = V extends keyof E[K] ? { version: V; data: E[K][V] } : never;
+
+export interface IBridge<T extends IRequestTypes, E extends IEventTypes> {
+  request<M extends keyof T>(
+    methodName: M,
+    requests: VersionedRequest<T, M>[]
+  ): Promise<[VersionedResponse<T, M> | null, Error | null]>;
+
+  on<K extends keyof E>(
+    eventName: K,
+    handler: (response: EventResponse<E, K, keyof E[K] & string>) => void
+  ): void;
+
+  off<K extends keyof E>(eventName: K): void;
+}
+
+export type OS = "Android" | "iOS" | "ReactNative";
+
+export interface BridgeInterface {
+  postMessage: (message: string) => void;
+}
+
+export interface Bridges {
+  Android: BridgeInterface;
+  iOS: BridgeInterface;
+  ReactNative: BridgeInterface;
+}
+
+export interface BridgeConfig {
+  bridges: Bridges;
+  defaultTimeout?: number;
+  version: SemverVersion;
+}
+
+export type ErrorHandler = (error: Error) => Error;
+
+export interface ErrorHandlers {
+  [key: string]: ErrorHandler;
+  default: ErrorHandler;
+}
+
+export interface BridgeResponse {
+  id: string;
+  type: "response" | "event";
+  method: string;
+  version: string;
+  payload: any;
+  error: {
+    type: string;
+    message: string;
+  } | null;
 }
