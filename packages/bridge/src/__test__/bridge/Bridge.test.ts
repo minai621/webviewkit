@@ -1,206 +1,258 @@
 import {
-  Bridge,
-  DefaultBridgeError,
-  IBridge,
-  RequestHandlers,
-  ResponseHandlers,
-} from "@/bridge";
+  BridgeConfig,
+  Bridges,
+  ErrorHandlers,
+  IEventTypes,
+  IRequestTypes,
+  SemverVersion,
+} from "@bridge/Bridge.type";
+import { DefaultBridgeError, TimeoutError } from "@bridge/DefaultBridgeError";
+import { createBridge } from "@bridge/createBridge";
+import * as environment from "@webviewkit/environment";
+
+jest.mock("@webviewkit/environment", () => ({
+  getEnvironment: jest.fn(),
+}));
+
+jest.mock("uuid", () => ({
+  v4: jest.fn(() => "mocked-uuid"),
+}));
+
+class CustomError extends DefaultBridgeError {
+  constructor(message: string) {
+    super(message);
+    this.name = "CustomError";
+  }
+}
 
 describe("Bridge", () => {
-  let bridge: Bridge<RequestHandlers, ResponseHandlers>;
-  let mockRequestHandlers: RequestHandlers;
-  let mockResponseHandlers: ResponseHandlers;
-  let mockConfig: IBridge<RequestHandlers, ResponseHandlers>;
-  let mockErrorHandler: jest.Mock;
+  const mockAndroidBridge = { postMessage: jest.fn() };
+  const mockIOSBridge = { postMessage: jest.fn() };
+  const mockRNBridge = { postMessage: jest.fn() };
+
+  const bridges: Bridges = {
+    Android: mockAndroidBridge,
+    iOS: mockIOSBridge,
+    ReactNative: mockRNBridge,
+  };
+
+  interface TestRequestTypes extends IRequestTypes {
+    getUserProfile: {
+      default: {
+        params: { userId: string };
+        result: { id: string; name: string };
+      };
+      "1.0.0": {
+        params: { userId: string };
+        result: { id: string; name: string };
+      };
+      "1.6.3": {
+        params: { userId: string };
+        result: { id: string; name: string; age: number };
+      };
+      "2.1.1": {
+        params: { userId: string };
+        result: { id: string; name: string; age: number; email: string };
+      };
+    };
+  }
+
+  interface TestEventTypes extends IEventTypes {
+    onUserStatusChange: {
+      default: { userId: string; status: "online" | "offline" };
+      "1.0.0": { userId: string; status: "online" | "offline" };
+      "1.5.0": {
+        userId: string;
+        status: "online" | "offline" | "away";
+        lastSeen: number;
+      };
+    };
+  }
+
+  const errorHandlers: ErrorHandlers = {
+    "custom-error": (error) => {
+      return new CustomError(error.message);
+    },
+    default: (error) => new DefaultBridgeError(error.message),
+  };
+
+  const config: BridgeConfig = {
+    version: "1.0.0",
+    bridges,
+    defaultTimeout: 1000,
+  };
+
+  const setupBridge = (os: string, version: SemverVersion = "1.7.0") => {
+    (environment.getEnvironment as jest.Mock).mockReturnValue({
+      os: { name: os },
+    });
+    return createBridge<TestRequestTypes, TestEventTypes>(errorHandlers, {
+      ...config,
+      version,
+    });
+  };
+
+  const simulateResponse = (response: any) => {
+    const responseEvent = new MessageEvent("message", {
+      data: JSON.stringify(response),
+    });
+    window.dispatchEvent(responseEvent);
+  };
 
   beforeEach(() => {
-    mockRequestHandlers = {
-      getUserProfile: {
-        "1.0.0": jest.fn().mockResolvedValue({ name: "John", age: 30 }),
-        "1.6.1": jest
-          .fn()
-          .mockResolvedValue({ name: "John", age: 30, city: "New York" }),
-        "2.0.1": jest.fn().mockResolvedValue({
-          name: "John",
-          age: 30,
-          email: "john@example.com",
-          city: "New York",
-        }),
-        default: jest.fn().mockResolvedValue({ name: "John" }),
-      },
-    };
+    jest.useFakeTimers();
+    jest.clearAllMocks();
+  });
 
-    mockResponseHandlers = {
-      log: {
-        "1.0.0": jest.fn().mockReturnValue({ success: true }),
-        "1.6.1": jest.fn().mockReturnValue({ success: true, logId: "123" }),
-        "2.0.1": jest.fn().mockReturnValue({
-          success: true,
-          timestamp: "2023-01-01T00:00:00Z",
-          logId: "123",
-        }),
-        default: jest.fn().mockReturnValue({ success: true }),
-      },
-    };
+  afterEach(() => {
+    jest.useRealTimers();
+  });
 
-    mockErrorHandler = jest.fn();
+  it("should select the correct bridge based on OS", async () => {
+    const bridge = setupBridge("Android");
+    const requestPromise = bridge.request("getUserProfile", [
+      { version: "default", params: { userId: "123" } },
+      { version: "1.0.0", params: { userId: "123" } },
+    ]);
 
-    mockConfig = {
+    expect(mockAndroidBridge.postMessage).toHaveBeenCalled();
+    expect(mockIOSBridge.postMessage).not.toHaveBeenCalled();
+    expect(mockRNBridge.postMessage).not.toHaveBeenCalled();
+
+    simulateResponse({
+      id: "mocked-uuid",
+      type: "response",
       version: "1.0.0",
-      bridges: {
-        ios: { postMessage: jest.fn() },
-        android: { postMessage: jest.fn() },
-        ReactNative: { postMessage: jest.fn() },
-      },
-      requestHandlers: mockRequestHandlers,
-      responseHandlers: mockResponseHandlers,
-      errorHandlers: {
-        default: mockErrorHandler,
-      },
-    };
+      payload: { id: "123", name: "John Doe" },
+    });
 
-    bridge = new Bridge(mockConfig);
-  });
-
-  describe("constructor", () => {
-    it("should create a Bridge instance with correct version", () => {
-      expect(bridge.version).toBe("1.0.0");
+    const [result, error] = await requestPromise;
+    expect(error).toBeNull();
+    expect(result).toEqual({
+      version: "1.0.0",
+      result: { id: "123", name: "John Doe" },
     });
   });
 
-  describe("request", () => {
-    it("should call the correct request handler for the exact version match", async () => {
-      const result = await bridge.request("getUserProfile", { userId: "123" });
-      expect(result).toEqual({ name: "John", age: 30 });
-      expect(mockRequestHandlers.getUserProfile["1.0.0"]).toHaveBeenCalledWith({
-        userId: "123",
-      });
+  it("should select the correct method version", async () => {
+    const bridge = setupBridge("iOS", "1.8.0");
+
+    const requestPromise = bridge.request("getUserProfile", [
+      { version: "default", params: { userId: "123" } },
+      { version: "1.0.0", params: { userId: "123" } },
+      { version: "1.6.3", params: { userId: "123" } },
+      { version: "2.1.1", params: { userId: "123" } },
+    ]);
+
+    const postMessageArg = JSON.parse(
+      mockIOSBridge.postMessage.mock.calls[0][0]
+    );
+    expect(postMessageArg.version).toBe("1.6.3");
+
+    simulateResponse({
+      id: "mocked-uuid",
+      type: "response",
+      version: "1.6.3",
+      payload: { id: "123", name: "John Doe", age: 30 },
     });
 
-    it("should use the closest lower version handler when exact match is not available", async () => {
-      bridge = new Bridge({ ...mockConfig, version: "1.2.1" });
-      const result = await bridge.request("getUserProfile", { userId: "123" });
-      expect(result).toEqual({ name: "John", age: 30 });
-      expect(mockRequestHandlers.getUserProfile["1.0.0"]).toHaveBeenCalledWith({
-        userId: "123",
-      });
-    });
-
-    it("should use the exact version handler when available", async () => {
-      bridge = new Bridge({ ...mockConfig, version: "1.6.1" });
-      const result = await bridge.request("getUserProfile", { userId: "123" });
-      expect(result).toEqual({ name: "John", age: 30, city: "New York" });
-      expect(mockRequestHandlers.getUserProfile["1.6.1"]).toHaveBeenCalledWith({
-        userId: "123",
-      });
-    });
-
-    it("should use the closest lower version handler for higher versions", async () => {
-      bridge = new Bridge({ ...mockConfig, version: "2.0.3" });
-      const result = await bridge.request("getUserProfile", { userId: "123" });
-      expect(result).toEqual({
-        name: "John",
-        age: 30,
-        email: "john@example.com",
-        city: "New York",
-      });
-      expect(mockRequestHandlers.getUserProfile["2.0.1"]).toHaveBeenCalledWith({
-        userId: "123",
-      });
-    });
-
-    it("should use the default handler if no suitable version is found", async () => {
-      bridge = new Bridge({ ...mockConfig, version: "0.6.1" });
-      const result = await bridge.request("getUserProfile", { userId: "123" });
-      expect(result).toEqual({ name: "John" });
-      expect(
-        mockRequestHandlers.getUserProfile["default"]
-      ).toHaveBeenCalledWith({
-        userId: "123",
-      });
-    });
-
-    it("should throw a DefaultBridgeError if no handler is found", async () => {
-      mockRequestHandlers.getUserProfile = {} as any;
-      expect(() =>
-        bridge.request("getUserProfile", {
-          userId: "123",
-        })
-      ).toThrow(DefaultBridgeError);
+    const [result, error] = await requestPromise;
+    expect(error).toBeNull();
+    expect(result).toEqual({
+      version: "1.6.3",
+      result: { id: "123", name: "John Doe", age: 30 },
     });
   });
 
-  describe("response handling", () => {
-    it("should call registered listeners when a response is received", () => {
-      const listener = jest.fn();
-      bridge.addResponseListener("log", listener);
+  it("should handle timeout errors", async () => {
+    const bridge = setupBridge("iOS", "2.0.0");
 
-      const messageEvent = new MessageEvent("message", {
-        data: JSON.stringify({ type: "log", payload: { message: "Test log" } }),
-      });
-      window.dispatchEvent(messageEvent);
+    const requestPromise = bridge.request("getUserProfile", [
+      { version: "default", params: { userId: "123" } },
+      { version: "2.1.1", params: { userId: "123" } },
+      { version: "1.0.0", params: { userId: "123" } },
+    ]);
 
-      expect(mockResponseHandlers.log["1.0.0"]).toHaveBeenCalledWith({
-        message: "Test log",
-      });
-      expect(listener).toHaveBeenCalledWith({ success: true });
+    jest.advanceTimersByTime(2000);
+
+    const [result, error] = await requestPromise;
+    expect(result).toBeNull();
+    expect(error).toBeInstanceOf(TimeoutError);
+    expect(error?.message).toBe(
+      "Request timeout for method getUserProfile version 1.0.0"
+    );
+  });
+
+  it("should handle custom errors", async () => {
+    const bridge = setupBridge("iOS", "2.0.0");
+
+    const requestPromise = bridge.request("getUserProfile", [
+      { version: "1.0.0", params: { userId: "123" } },
+    ]);
+
+    simulateResponse({
+      id: "mocked-uuid",
+      type: "response",
+      error: { type: "custom-error", message: "Custom error occurred" },
     });
 
-    it("should use the correct version handler for responses", () => {
-      bridge = new Bridge({ ...mockConfig, version: "2.0.1" });
-      const listener = jest.fn();
-      bridge.addResponseListener("log", listener);
+    const [result, error] = await requestPromise;
+    expect(result).toBeNull();
+    expect(error).toBeInstanceOf(CustomError);
+    expect(error?.message).toBe("Custom error occurred");
+  });
 
-      const messageEvent = new MessageEvent("message", {
-        data: JSON.stringify({ type: "log", payload: { message: "Test log" } }),
-      });
-      window.dispatchEvent(messageEvent);
+  it("should handle events with correct version", () => {
+    const bridge = setupBridge("Android", "1.6.0");
+    const eventHandler = jest.fn();
 
-      expect(mockResponseHandlers.log["2.0.1"]).toHaveBeenCalledWith({
-        message: "Test log",
-      });
-      expect(listener).toHaveBeenCalledWith({
-        success: true,
-        timestamp: "2023-01-01T00:00:00Z",
-        logId: "123",
-      });
+    bridge.on("onUserStatusChange", eventHandler);
+
+    simulateResponse({
+      type: "event",
+      method: "onUserStatusChange",
+      version: "1.5.0",
+      payload: { userId: "123", status: "away", lastSeen: 1623456789 },
     });
 
-    it("should remove listener when removeResponseListener is called", () => {
-      const listener = jest.fn();
-      bridge.addResponseListener("log", listener);
-      bridge.removeResponseListener("log", listener);
-
-      const messageEvent = new MessageEvent("message", {
-        data: JSON.stringify({ type: "log", payload: { message: "Test log" } }),
-      });
-      window.dispatchEvent(messageEvent);
-
-      expect(listener).not.toHaveBeenCalled();
+    expect(eventHandler).toHaveBeenCalledWith({
+      version: "1.5.0",
+      data: { userId: "123", status: "away", lastSeen: 1623456789 },
     });
   });
 
-  describe("version handling", () => {
-    it("should use correct handler for different versions", () => {
-      const bridge1 = new Bridge({ ...mockConfig, version: "1.0.0" });
-      const bridge2 = new Bridge({ ...mockConfig, version: "2.0.1" });
+  it("should handle unknown events", () => {
+    const bridge = setupBridge("iOS", "2.0.0");
+    const eventHandler = jest.fn();
 
-      bridge1.request("getUserProfile", { userId: "123" });
-      bridge2.request("getUserProfile", { userId: "123" });
+    bridge.on("onUserStatusChange", eventHandler);
 
-      expect(mockRequestHandlers.getUserProfile["1.0.0"]).toHaveBeenCalled();
-      expect(mockRequestHandlers.getUserProfile["2.0.1"]).toHaveBeenCalled();
+    simulateResponse({
+      type: "event",
+      method: "unknownEvent",
+      version: "1.0.0",
+      payload: { someData: "value" },
     });
-  });
 
-  describe("error handling", () => {
-    it("should call error handler when an error occurs in message processing", () => {
-      const invalidMessageEvent = new MessageEvent("message", {
-        data: "invalid JSON",
-      });
-      window.dispatchEvent(invalidMessageEvent);
-
-      expect(mockErrorHandler).toHaveBeenCalled();
+    simulateResponse({
+      type: "event",
+      method: "onUserStatusChange",
+      version: "1.0.0",
+      payload: { userId: "123", status: "online" },
     });
+
+    expect(eventHandler).not.toHaveBeenCalledWith(
+      expect.objectContaining({
+        version: "1.0.0",
+        data: { someData: "value" },
+      })
+    );
+
+    expect(eventHandler).toHaveBeenCalledWith({
+      version: "1.0.0",
+      data: { userId: "123", status: "online" },
+    });
+
+    expect(eventHandler).toHaveBeenCalledTimes(1);
   });
 });

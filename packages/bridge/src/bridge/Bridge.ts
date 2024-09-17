@@ -1,102 +1,178 @@
-import { findBestHandlerVersion } from "@/utils/version";
-import { DefaultBridgeError, DefaultBridgeMessage } from ".";
+import { selectBestVersion } from "@/utils/version";
+import { getEnvironment } from "@webviewkit/environment";
+import { v4 as uuidv4 } from "uuid";
 import {
-  HandlerParamsType,
-  HandlerReturnType,
+  BridgeConfig,
+  BridgeInterface,
+  BridgeResponse,
+  ErrorHandlers,
+  EventResponse,
   IBridge,
-  RequestHandlers,
-  ResponseHandlers,
+  IEventTypes,
+  IRequestTypes,
+  OS,
   SemverVersion,
+  VersionedRequest,
+  VersionedResponse,
 } from "./Bridge.type";
+import { TimeoutError } from "./DefaultBridgeError";
 
-class Bridge<
-  TRequestHandlers extends RequestHandlers,
-  TResponseHandlers extends ResponseHandlers,
-> {
-  public version: SemverVersion;
-  private config: IBridge<TRequestHandlers, TResponseHandlers>;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private responseListeners: Map<string, Set<(payload: any) => void>> =
-    new Map();
+class Bridge<T extends IRequestTypes, E extends IEventTypes>
+  implements IBridge<T, E>
+{
+  private eventHandlers: Map<keyof E, Set<(response: any) => void>> = new Map();
+  private pendingRequests: Map<
+    string,
+    { resolve: Function; reject: Function; timer: NodeJS.Timeout }
+  > = new Map();
+  private currentBridge: BridgeInterface;
+  private currentVersion: SemverVersion;
 
-  constructor(config: IBridge<TRequestHandlers, TResponseHandlers>) {
-    this.config = config;
-    this.version = config.version;
+  constructor(
+    private errorHandlers: ErrorHandlers,
+    private config: BridgeConfig
+  ) {
+    this.currentBridge = this.selectBridge();
+    this.currentVersion = config.version;
     this.initMessageListener();
   }
 
-  request<T extends keyof TRequestHandlers>(
-    type: T,
-    params: HandlerParamsType<TRequestHandlers[T], typeof this.version>
-  ): Promise<HandlerReturnType<TRequestHandlers[T], typeof this.version>> {
-    const handlerVersion = findBestHandlerVersion(
-      this.config.requestHandlers[type],
-      this.version
-    );
-
-    const handler = this.config.requestHandlers[type][handlerVersion];
-
-    if (!handler) {
-      throw new DefaultBridgeError(`No handler for type ${String(type)}`);
-    }
-    return handler(params);
-  }
-
-  addResponseListener<T extends keyof TResponseHandlers>(
-    type: T,
-    listener: (
-      payload: HandlerParamsType<TResponseHandlers[T], typeof this.version>
-    ) => void
-  ) {
-    if (!this.responseListeners.has(type as string)) {
-      this.responseListeners.set(type as string, new Set());
-    }
-    this.responseListeners.get(type as string)!.add(listener);
-  }
-
-  removeResponseListener<T extends keyof TResponseHandlers>(
-    type: T,
-    listener: (
-      payload: HandlerParamsType<TResponseHandlers[T], typeof this.version>
-    ) => void
-  ) {
-    const listeners = this.responseListeners.get(type as string);
-    if (listeners) {
-      listeners.delete(listener);
-    }
-  }
-
-  private initMessageListener() {
-    window.addEventListener("message", this.handleMessage.bind(this));
-  }
-
-  private handleMessage(event: MessageEvent) {
+  async request<M extends keyof T, V extends keyof T[M] & SemverVersion>(
+    methodName: M,
+    requests: VersionedRequest<T, M, V>[]
+  ): Promise<[VersionedResponse<T, M, V> | null, Error | null]> {
     try {
-      const { type, payload } = JSON.parse(event.data) as DefaultBridgeMessage;
-      const handler =
-        this.config.responseHandlers[type]?.[this.version] ||
-        this.config.responseHandlers[type]?.["default"];
+      const bestVersion = this.selectBestVersion(
+        requests.map((r) => r.version) as (keyof T[M] & SemverVersion)[]
+      );
+      const bestRequest =
+        requests.find((r) => r.version === bestVersion) ||
+        requests.find((r) => r.version === "default");
 
-      if (handler) {
-        const result = handler(payload);
+      if (!bestRequest) {
+        throw new Error(
+          `No suitable version found for method ${String(methodName)}`
+        );
+      }
 
-        const listeners = this.responseListeners.get(type);
-        if (listeners) {
-          listeners.forEach((listener) => listener(result));
-        }
-      } else {
-        throw new DefaultBridgeError(`No handler for type ${String(type)}`);
+      const result = await this.sendRequest(
+        methodName,
+        bestRequest.version,
+        bestRequest.params
+      );
+      return [result, null];
+    } catch (error: any) {
+      if (error instanceof TimeoutError) {
+        return [null, error];
       }
-    } catch (error) {
-      if (error instanceof Error) {
-        if (this.config.errorHandlers?.default) {
-          const defaultBridgeError: DefaultBridgeError = {
-            name: "DefaultBridgeError",
-            message: error.message,
-          };
-          this.config.errorHandlers.default(defaultBridgeError);
+      return [null, this.handleError(error)];
+    }
+  }
+
+  on<K extends keyof E>(
+    eventName: K,
+    handler: (response: EventResponse<E, K, keyof E[K] & string>) => void
+  ): void {
+    if (!this.eventHandlers.has(eventName)) {
+      this.eventHandlers.set(eventName, new Set());
+    }
+    this.eventHandlers.get(eventName)!.add(handler);
+  }
+
+  off<K extends keyof E>(eventName: K): void {
+    this.eventHandlers.delete(eventName);
+  }
+
+  private selectBridge(): BridgeInterface {
+    const os = getEnvironment(navigator.userAgent).os.name as OS;
+    return this.config.bridges[os] || this.config.bridges.ReactNative;
+  }
+
+  private selectBestVersion(
+    availableVersions: (keyof T & string)[]
+  ): keyof T & string {
+    return selectBestVersion(availableVersions, this.currentVersion);
+  }
+
+  private async sendRequest<
+    M extends keyof T,
+    V extends keyof T[M] & SemverVersion,
+    P extends T[M][V]["params"],
+  >(methodName: M, version: V, params: P): Promise<VersionedResponse<T, M, V>> {
+    const requestId = uuidv4();
+    const timeoutDuration = this.config.defaultTimeout || 5000;
+
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        this.pendingRequests.delete(requestId);
+        reject(
+          new TimeoutError(
+            `Request timeout for method ${String(methodName)} version ${version}`
+          )
+        );
+      }, timeoutDuration);
+
+      this.pendingRequests.set(requestId, { resolve, reject, timer });
+
+      this.currentBridge.postMessage(
+        JSON.stringify({
+          id: requestId,
+          type: "request",
+          method: methodName,
+          version,
+          params,
+        })
+      );
+    });
+  }
+
+  private handleEvent<K extends keyof E>(
+    eventName: K,
+    version: keyof E[K] & string,
+    data: E[K][keyof E[K] & string]
+  ): void {
+    const handlers = this.eventHandlers.get(eventName);
+    if (handlers) {
+      handlers.forEach((handler) =>
+        handler({ version, data } as EventResponse<E, K, keyof E[K] & string>)
+      );
+    } else {
+      console.warn(`No handler found for event: ${String(eventName)}`);
+    }
+  }
+
+  private initMessageListener(): void {
+    window.addEventListener("message", (event) => {
+      const response: BridgeResponse = JSON.parse(event.data);
+      const { id, type, method, version, payload, error } = response;
+
+      if (type === "response") {
+        const pendingRequest = this.pendingRequests.get(id);
+        if (pendingRequest) {
+          clearTimeout(pendingRequest.timer);
+          this.pendingRequests.delete(id);
+          if (error) {
+            pendingRequest.reject(this.handleError(error));
+          } else {
+            pendingRequest.resolve({ version, result: payload });
+          }
         }
+      } else if (type === "event") {
+        this.handleEvent(method, version, payload);
       }
+    });
+  }
+
+  private handleError(error: Error | { type: string; message: string }): Error {
+    if (error instanceof Error) {
+      return error;
+    }
+
+    const handler = this.errorHandlers[error.type];
+    if (handler) {
+      return handler(new Error(error.message));
+    } else {
+      return this.errorHandlers.default(new Error(error.message));
     }
   }
 }

@@ -1,27 +1,38 @@
 import Bridge from "./Bridge";
-import type {
-  DefaultBridgeMessage,
-  HandlerParamsType,
-  HandlerReturnType,
+import {
+  BridgeConfig,
+  BridgeInterface,
+  BridgeResponse,
+  Bridges,
+  ErrorHandler,
+  ErrorHandlers,
   IBridge,
-  RequestHandler,
-  RequestHandlers,
-  ResponseHandler,
-  ResponseHandlers,
+  IEventTypes,
+  IRequestTypes,
   SemverVersion,
+  VersionedRequest,
+  VersionedResponse,
 } from "./Bridge.type";
-import { DefaultBridgeError } from "./DefaultBridgeError";
+import {
+  DefaultBridgeError,
+  NetworkError,
+  TimeoutError,
+} from "./DefaultBridgeError";
+import { createBridge } from "./createBridge";
 
-export { createBridgeWithVersion } from "./createBridgeWithVersion";
-export { Bridge, DefaultBridgeError };
 export type {
-  DefaultBridgeMessage,
-  HandlerParamsType,
-  HandlerReturnType,
+  BridgeConfig,
+  BridgeInterface,
+  BridgeResponse,
+  Bridges,
+  ErrorHandler,
+  ErrorHandlers,
   IBridge,
-  RequestHandler,
-  RequestHandlers,
-  ResponseHandler,
-  ResponseHandlers,
+  IEventTypes,
+  IRequestTypes,
   SemverVersion,
+  VersionedRequest,
+  VersionedResponse,
 };
+
+export { Bridge, DefaultBridgeError, NetworkError, TimeoutError, createBridge };
