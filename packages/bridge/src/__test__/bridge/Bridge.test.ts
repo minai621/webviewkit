@@ -79,6 +79,7 @@ describe("Bridge", () => {
   const config: BridgeConfig = {
     version: "1.0.0",
     bridges,
+    errorHandlers,
     defaultTimeout: 1000,
   };
 
@@ -86,8 +87,9 @@ describe("Bridge", () => {
     (environment.getEnvironment as jest.Mock).mockReturnValue({
       os: { name: os },
     });
-    return createBridge<TestRequestTypes, TestEventTypes>(errorHandlers, {
+    return createBridge<TestRequestTypes, TestEventTypes>({
       ...config,
+      errorHandlers,
       version,
     });
   };

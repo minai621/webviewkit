@@ -84,9 +84,10 @@ export interface Bridges {
 }
 
 export interface BridgeConfig {
-  bridges: Bridges;
-  defaultTimeout?: number;
   version: SemverVersion;
+  bridges: Bridges;
+  errorHandlers: ErrorHandlers;
+  defaultTimeout?: number;
 }
 
 export type ErrorHandler = (error: Error) => Error;
