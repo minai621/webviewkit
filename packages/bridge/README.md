@@ -26,73 +26,118 @@ pnpm add @webviewkit/bridge
 Here's a basic example of how to use @webviewkit/bridge:
 
 ```typescript
-import { createBridgeWithVersion } from "@webviewkit/bridge";
+import { createBridge } from "@webviewkit/bridge";
 
-const bridge = createBridgeWithVersion("1.2.3", {
-  requestHandlers: {
-    getUser: {
-      "1.0.0": async ({ userId }: { userId: string }) => {
-        // Implementation for version 1.0.0 and above, but below 2.0.0
-        return { id: userId, name: "John Doe" };
-      },
-      "2.0.0": async ({ userId }: { userId: string }) => {
-        // Implementation for version 2.0.0 and above
-        return { id: userId, name: "John Doe", email: "john@example.com" };
-      },
-      default: async ({ userId }: { userId: string }) => {
-        // Default implementation for versions below 1.0.0
-        return { id: userId };
-      },
-    },
-  },
-  responseHandlers: {
-    userUpdated: {
-      "1.0.0": (payload: { id: string; name: string }) => {
-        console.log("User updated (1.0.0):", payload);
-        return { success: true };
-      },
-      "2.0.0": (payload: { id: string; name: string; email: string }) => {
-        console.log("User updated (2.0.0):", payload);
-        return { success: true, timestamp: new Date().toISOString() };
-      },
-      default: (payload: { id: string }) => {
-        console.log("User updated (default):", payload);
-        return { success: true };
-      },
-    },
-  },
-  // Optional: Customize bridge implementations
+// Define request types
+interface UserProfileRequestTypes extends IRequestTypes {
+  getUserProfile: {
+    default: {
+      params: { userId: string };
+      result: { id: string; name: string };
+    };
+    "1.0.0": {
+      params: { userId: string };
+      result: { id: string; name: string };
+    };
+    "2.0.0": {
+      params: { userId: string; includeEmail: boolean };
+      result: { id: string; name: string; email?: string };
+    };
+  };
+  updateUserProfile: {
+    default: {
+      params: { userId: string; name: string };
+      result: { success: boolean };
+    };
+    "1.0.0": {
+      params: { userId: string; name: string };
+      result: { success: boolean };
+    };
+    "2.0.0": {
+      params: { userId: string; name: string; email?: string };
+      result: { success: boolean; updatedAt: string };
+    };
+  };
+}
+
+// Define event types
+interface UserEventTypes extends IEventTypes {
+  onUserStatusChange: {
+    default: { userId: string; status: "online" | "offline" };
+    "1.0.0": { userId: string; status: "online" | "offline" };
+    "2.0.0": {
+      userId: string;
+      status: "online" | "offline" | "away";
+      lastSeen?: number;
+    };
+  };
+}
+
+// Create the bridge instance
+const bridge = createBridge<UserProfileRequestTypes, UserEventTypes>({
+  version: "2.0.0",
   bridges: {
-    ios: {
-      postMessage: (payload: string) =>
-        window.webkit.messageHandlers.bridge.postMessage(payload),
+    Android: {
+      postMessage: (message: string) => {
+        // Call Android native code
+      },
     },
-    android: {
-      postMessage: (payload: string) => window.Android.postMessage(payload),
+    iOS: {
+      postMessage: (message: string) => {
+        // Call iOS native code
+      },
     },
     ReactNative: {
-      postMessage: (payload: string) =>
-        window.ReactNativeWebView.postMessage(payload),
+      postMessage: (message: string) => {
+        // Call React Native native code
+      },
     },
   },
-  // Optional: Custom error handler
   errorHandlers: {
     default: (error: Error) => {
       console.error("Bridge error:", error);
+      return error;
     },
   },
+  defaultTimeout: 5000,
 });
 
 // Make a request
-bridge
-  .request("getUser", { userId: "123" })
-  .then((user) => console.log("User:", user))
-  .catch((error) => console.error("Error:", error));
+async function getUserProfile(userId: string) {
+  try {
+    const [result, error] = await bridge.request("getUserProfile", [
+      { version: "2.0.0", params: { userId, includeEmail: true } },
+      { version: "1.0.0", params: { userId } },
+      { version: "default", params: { userId } },
+    ]);
+
+    if (error) {
+      console.error("Error fetching user profile:", error);
+      return;
+    }
+
+    if (result) {
+      console.log("User profile:", result);
+
+      if (result.version === "2.0.0" && result.result.email) {
+        console.log("User email:", result.result.email);
+      }
+    }
+  } catch (error) {
+    console.error("Unexpected error:", error);
+  }
+}
 
 // Add a response listener
-bridge.addResponseListener("userUpdated", (updatedUser) => {
-  console.log("User updated:", updatedUser);
+bridge.on("onUserStatusChange", (response) => {
+  console.log("User status changed:", response);
+  if (response.version === "2.0.0" && response.data.status === "away") {
+    console.log("User last seen:", response.data.lastSeen);
+  }
 });
+
+// Usage examples
+getUserProfile("user123");
 ```
 
 ## Version Handling
@@ -112,56 +157,51 @@ For example, with handlers defined for versions "1.0.0", "1.6.1", and "2.0.1":
 
 ## API
 
-### `createBridgeWithVersion`
+### `createBridge`
 
 A function that creates a new Bridge instance with version-aware handlers.
 
 ```typescript
-function createBridgeWithVersion<
-  TRequestHandlers extends RequestHandlers,
-  TResponseHandlers extends ResponseHandlers,
->(
-  version: SemverVersion,
-  options: {
-    requestHandlers: TRequestHandlers;
-    responseHandlers: TResponseHandlers;
-    bridges?: {
-      ios?: { postMessage: (payload: string) => void };
-      android?: { postMessage: (payload: string) => void };
-      ReactNative?: { postMessage: (payload: string) => void };
-    };
-    errorHandlers?: {
-      [key: string]: (error: DefaultBridgeError) => void;
-    };
-  }
-): Bridge<TRequestHandlers, TResponseHandlers>;
+function createBridge<T extends IRequestTypes, E extends IEventTypes>(
+  config: BridgeConfig
+): Bridge<T, E>;
 ```
 
-### `Bridge<TRequestHandlers, TResponseHandlers>`
+### `Bridge<T extends IRequestTypes, E extends IEventTypes>`
 
 The main class for handling bridge operations.
 
 #### Methods
 
-- `request<T extends keyof TRequestHandlers>(type: T, params: HandlerParamsType<TRequestHandlers[T], typeof this.version>): Promise<HandlerReturnType<TRequestHandlers[T], typeof this.version>>`
+- `request<M extends keyof T>(methodName: M, requests: VersionedRequest<T, M>[]): Promise<[VersionedResponse<T, M> | null, Error | null]>`
 
   Sends a request to the native platform, automatically selecting the appropriate version handler.
 
-- `addResponseListener<T extends keyof TResponseHandlers>(type: T, listener: (payload: HandlerParamsType<TResponseHandlers[T], typeof this.version>) => void)`
+- `on<K extends keyof E>(eventName: K, handler: (response: EventResponse<E, K, keyof E[K] & string>) => void): void`
 
-  Adds a listener for a specific response type.
+  Adds a listener for a specific event type.
 
-- `removeResponseListener<T extends keyof TResponseHandlers>(type: T, listener: (payload: HandlerParamsType<TResponseHandlers[T], typeof this.version>) => void)`
+- `off<K extends keyof E>(eventName: K): void`
 
   Removes a previously added listener.
 
 ### Types
 
 - `SemverVersion`: Represents a semantic version string or "default".
-- `RequestHandler<T, R>`: Represents a function that handles requests.
-- `ResponseHandler<T, R>`: Represents a function that handles responses.
-- `RequestHandlers`: A map of versioned request handlers.
-- `ResponseHandlers`: A map of versioned response handlers.
+- `IRequestTypes`: Represents the interface for defining request types.
+- `IEventTypes`: Represents the interface for defining event types.
+- `VersionedRequest<T extends IRequestTypes, M extends keyof T>`: Represents a versioned request.
+- `VersionedResponse<T extends IRequestTypes, M extends keyof T>`: Represents a versioned response.
+- `EventResponse<E extends IEventTypes, K extends keyof E>`: Represents an event response.
+- `BridgeConfig`: Represents the configuration object for creating a `Bridge` instance.
+  ```typescript
+  interface BridgeConfig {
+    version: SemverVersion;
+    bridges: Bridges;
+    errorHandlers: ErrorHandlers;
+    defaultTimeout?: number;
+  }
+  ```
 
 ## Contributing
 
