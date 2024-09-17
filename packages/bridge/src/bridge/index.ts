@@ -1,4 +1,5 @@
 import Bridge from "./Bridge";
+
 import {
   BridgeConfig,
   BridgeInterface,
@@ -6,18 +7,25 @@ import {
   Bridges,
   ErrorHandler,
   ErrorHandlers,
+  EventResponse,
   IBridge,
   IEventTypes,
   IRequestTypes,
+  OS,
+  RequestParams,
   SemverVersion,
+  VersionedEventBase,
+  VersionedMethodBase,
   VersionedRequest,
   VersionedResponse,
 } from "./Bridge.type";
+
 import {
   DefaultBridgeError,
   NetworkError,
   TimeoutError,
 } from "./DefaultBridgeError";
+
 import { createBridge } from "./createBridge";
 
 export type {
@@ -27,10 +35,15 @@ export type {
   Bridges,
   ErrorHandler,
   ErrorHandlers,
+  EventResponse,
   IBridge,
   IEventTypes,
   IRequestTypes,
+  OS,
+  RequestParams,
   SemverVersion,
+  VersionedEventBase,
+  VersionedMethodBase,
   VersionedRequest,
   VersionedResponse,
 };

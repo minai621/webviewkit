@@ -1,14 +1,10 @@
 /* eslint-disable @typescript-eslint/no-unsafe-function-type */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { selectBestVersion } from "@/utils/version";
-import { getEnvironment } from "@webviewkit/environment";
-import { v4 as uuidv4 } from "uuid";
 import {
   BridgeConfig,
   BridgeInterface,
   BridgeResponse,
-  ErrorHandlers,
   EventResponse,
   IBridge,
   IEventTypes,
@@ -16,10 +12,13 @@ import {
   OS,
   RequestParams,
   SemverVersion,
+  TimeoutError,
   VersionedRequest,
   VersionedResponse,
-} from "./Bridge.type";
-import { TimeoutError } from "./DefaultBridgeError";
+} from "@/bridge";
+import { selectBestVersion } from "@/utils/version";
+import { getEnvironment } from "@webviewkit/environment";
+import { v4 as uuidv4 } from "uuid";
 
 class Bridge<T extends IRequestTypes, E extends IEventTypes>
   implements IBridge<T, E>
@@ -33,10 +32,7 @@ class Bridge<T extends IRequestTypes, E extends IEventTypes>
   private currentBridge: BridgeInterface;
   private currentVersion: SemverVersion;
 
-  constructor(
-    private errorHandlers: ErrorHandlers,
-    private config: BridgeConfig
-  ) {
+  constructor(private config: BridgeConfig) {
     this.currentBridge = this.selectBridge();
     this.currentVersion = config.version;
     this.initMessageListener();
@@ -179,11 +175,11 @@ class Bridge<T extends IRequestTypes, E extends IEventTypes>
       return error;
     }
 
-    const handler = this.errorHandlers[error.type];
+    const handler = this.config.errorHandlers[error.type];
     if (handler) {
       return handler(new Error(error.message));
     } else {
-      return this.errorHandlers.default(new Error(error.message));
+      return this.config.errorHandlers.default(new Error(error.message));
     }
   }
 }
