@@ -14,6 +14,7 @@ import {
   IEventTypes,
   IRequestTypes,
   OS,
+  RequestParams,
   SemverVersion,
   VersionedRequest,
   VersionedResponse,
@@ -41,10 +42,10 @@ class Bridge<T extends IRequestTypes, E extends IEventTypes>
     this.initMessageListener();
   }
 
-  async request<M extends keyof T, V extends keyof T[M] & SemverVersion>(
+  async request<M extends keyof T>(
     methodName: M,
-    requests: VersionedRequest<T, M, V>[]
-  ): Promise<[VersionedResponse<T, M, V> | null, Error | null]> {
+    requests: VersionedRequest<T, M>[]
+  ): Promise<[VersionedResponse<T, M> | null, Error | null]> {
     try {
       const bestVersion = this.selectBestVersion(
         requests.map((r) => r.version) as (keyof T[M] & SemverVersion)[]
@@ -64,7 +65,7 @@ class Bridge<T extends IRequestTypes, E extends IEventTypes>
         bestRequest.version,
         bestRequest.params
       );
-      return [result, null];
+      return [result, null as Error | null];
     } catch (error: any) {
       if (error instanceof TimeoutError) {
         return [null, error];
@@ -101,8 +102,11 @@ class Bridge<T extends IRequestTypes, E extends IEventTypes>
   private async sendRequest<
     M extends keyof T,
     V extends keyof T[M] & SemverVersion,
-    P extends T[M][V]["params"],
-  >(methodName: M, version: V, params: P): Promise<VersionedResponse<T, M, V>> {
+  >(
+    methodName: M,
+    version: V,
+    params: RequestParams<T, M, V>
+  ): Promise<VersionedResponse<T, M> | null> {
     const requestId = uuidv4();
     const timeoutDuration = this.config.defaultTimeout || 5000;
 
@@ -158,7 +162,10 @@ class Bridge<T extends IRequestTypes, E extends IEventTypes>
           if (error) {
             pendingRequest.reject(this.handleError(error));
           } else {
-            pendingRequest.resolve({ version, result: payload });
+            pendingRequest.resolve({
+              version,
+              result: payload,
+            } as VersionedResponse<T, typeof method>);
           }
         }
       } else if (type === "event") {

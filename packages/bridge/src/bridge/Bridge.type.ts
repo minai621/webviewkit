@@ -28,23 +28,19 @@ export type RequestResult<
   V extends keyof T[M] & SemverVersion,
 > = T[M][V] extends { result: infer R } ? R : never;
 
-export type VersionedRequest<
-  T extends IRequestTypes,
-  M extends keyof T,
-  V extends keyof T[M] & SemverVersion,
-> = {
-  version: V;
-  params: RequestParams<T, M, V>;
-};
+export type VersionedRequest<T extends IRequestTypes, M extends keyof T> = {
+  [V in keyof T[M] & SemverVersion]: {
+    version: V;
+    params: RequestParams<T, M, V>;
+  };
+}[keyof T[M] & SemverVersion];
 
-export type VersionedResponse<
-  T extends IRequestTypes,
-  M extends keyof T,
-  V extends keyof T[M] & SemverVersion,
-> = {
-  version: V;
-  result: RequestResult<T, M, V>;
-};
+export type VersionedResponse<T extends IRequestTypes, M extends keyof T> = {
+  [V in keyof T[M] & SemverVersion]: {
+    version: V;
+    result: RequestResult<T, M, V>;
+  };
+}[keyof T[M] & SemverVersion];
 
 export interface VersionedEventBase<T = any> {
   default: T;
@@ -64,10 +60,8 @@ export type EventResponse<
 export interface IBridge<T extends IRequestTypes, E extends IEventTypes> {
   request<M extends keyof T>(
     methodName: M,
-    requests: VersionedRequest<T, M, keyof T[M] & SemverVersion>[]
-  ): Promise<
-    [VersionedResponse<T, M, keyof T[M] & SemverVersion> | null, Error | null]
-  >;
+    requests: VersionedRequest<T, M>[]
+  ): Promise<[VersionedResponse<T, M> | null, Error | null]>;
 
   on<K extends keyof E>(
     eventName: K,
