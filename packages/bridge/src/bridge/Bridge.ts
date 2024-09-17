@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-unsafe-function-type */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { selectBestVersion } from "@/utils/version";
 import { getEnvironment } from "@webviewkit/environment";
 import { v4 as uuidv4 } from "uuid";
@@ -23,6 +26,7 @@ class Bridge<T extends IRequestTypes, E extends IEventTypes>
   private eventHandlers: Map<keyof E, Set<(response: any) => void>> = new Map();
   private pendingRequests: Map<
     string,
+    // eslint-disable-next-line no-undef
     { resolve: Function; reject: Function; timer: NodeJS.Timeout }
   > = new Map();
   private currentBridge: BridgeInterface;

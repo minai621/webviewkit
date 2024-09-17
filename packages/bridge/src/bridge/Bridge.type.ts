@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export type SemverVersion = `${number}.${number}.${number}` | "default";
 
 export interface VersionedMethodBase {
