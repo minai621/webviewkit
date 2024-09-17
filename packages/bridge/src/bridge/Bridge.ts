@@ -1,9 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-function-type */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { selectBestVersion } from "@/utils/version";
-import { getEnvironment } from "@webviewkit/environment";
-import { v4 as uuidv4 } from "uuid";
 import {
   BridgeConfig,
   BridgeInterface,
@@ -15,10 +12,13 @@ import {
   OS,
   RequestParams,
   SemverVersion,
+  TimeoutError,
   VersionedRequest,
   VersionedResponse,
-} from "./Bridge.type";
-import { TimeoutError } from "./DefaultBridgeError";
+} from "@/bridge";
+import { selectBestVersion } from "@/utils/version";
+import { getEnvironment } from "@webviewkit/environment";
+import { v4 as uuidv4 } from "uuid";
 
 class Bridge<T extends IRequestTypes, E extends IEventTypes>
   implements IBridge<T, E>

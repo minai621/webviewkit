@@ -1,5 +1,4 @@
-import { Bridge } from ".";
-import { BridgeConfig, IEventTypes, IRequestTypes } from "./Bridge.type";
+import { Bridge, BridgeConfig, IEventTypes, IRequestTypes } from "@/bridge";
 
 export function createBridge<T extends IRequestTypes, E extends IEventTypes>(
   config: BridgeConfig
