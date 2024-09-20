@@ -1,0 +1,66 @@
+{
+  "name": "@webviewkit/webviewdocs",
+  "publishConfig": {
+    "access": "public"
+  },
+  "version": "1.0.0",
+  "description": "A documentation generator for WebView bridge interfaces",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "webview",
+    "bridge",
+    "documentation",
+    "api",
+    "generator"
+  ],
+  "author": "minai621",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/minai621/webviewkit.git"
+  },
+  "bugs": {
+    "url": "https://github.com/minai621/webviewkit/issues"
+  },
+  "homepage": "https://github.com/minai621/webviewkit#readme",
+  "scripts": {
+    "build": "tsup",
+    "test": "jest --config ./jest.config.ts",
+    "lint": "eslint src/**/*.ts",
+    "typecheck": "tsc --noEmit",
+    "changeset": "changeset",
+    "version": "changeset version",
+    "release": "pnpm run build && changeset publish"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^2.27.8",
+    "@types/jest": "^29.5.12",
+    "@typescript-eslint/eslint-plugin": "^5.0.0",
+    "@typescript-eslint/parser": "^5.0.0",
+    "eslint": "^8.0.0",
+    "jest": "^29.5.0",
+    "jest-environment-jsdom": "^29.7.0",
+    "ts-jest": "^29.1.0",
+    "tsup": "^6.7.0",
+    "typescript": "^5.0.4"
+  },
+  "peerDependencies": {
+    "typescript": "^4.0.0 || ^5.0.0"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "packageManager": "pnpm@8.15.6"
+}
