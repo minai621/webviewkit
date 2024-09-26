@@ -5,7 +5,9 @@
     "moduleResolution": "NodeNext",
     "baseUrl": "./src",
     "paths": {
-      "@/*": ["*"]
+      "@/*": ["*"],
+      "@/generator": ["generator"],
+      "@/utils": ["utils"]
     },
     "lib": ["ESNext", "DOM"],
     "declaration": true,
@@ -17,6 +19,12 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true
   },
-  "include": ["./src/**/*", "jest.config.ts", "tsup.config.ts"],
+  "include": [
+    "./src/**/*",
+    "jest.config.ts",
+    "tsup.config.ts",
+    "../docTest/bridgedoc.config.ts",
+    "src/test.ts"
+  ],
   "exclude": ["node_modules", "dist"]
 }
