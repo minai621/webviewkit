@@ -1,6 +1,6 @@
 # WebViewKit
 
-WebViewKit is a collection of TypeScript libraries designed to enhance and simplify the development of applications that utilize WebView technology. Our goal is to provide developers with powerful tools to detect, analyze, optimize, and bridge communication in their WebView-based applications.
+WebViewKit is a comprehensive suite of TypeScript libraries designed to enhance and simplify the development of WebView-based applications. Our goal is to provide developers with powerful tools for detection, analysis, optimization, and communication bridging in WebView environments.
 
 ## Packages
 
@@ -8,18 +8,18 @@ WebViewKit currently consists of the following packages:
 
 ### [@webviewkit/environment](./packages/environment)
 
-A lightweight TypeScript library for detecting and analyzing user environments, including operating systems, browsers, and devices. It's particularly useful for identifying WebView environments.
+A lightweight TypeScript library for detecting and analyzing user environments, particularly useful for identifying WebView environments.
 
 [![npm version](https://badge.fury.io/js/%40webviewkit%2Fenvironment.svg)](https://badge.fury.io/js/%40webviewkit%2Fenvironment)
 
-#### Features:
+#### Key Features:
 
 - Accurate detection of operating systems, browsers, and device types
 - Specialized WebView detection
 - TypeScript support with comprehensive type definitions
 - Easy-to-use API for retrieving environment information
 
-For more details, check out the [@webviewkit/environment README](./packages/environment/README.md).
+[Learn more about @webviewkit/environment](./packages/environment/README.md)
 
 ### [@webviewkit/bridge](./packages/bridge)
 
@@ -27,27 +27,39 @@ A flexible and type-safe TypeScript library for facilitating communication betwe
 
 [![npm version](https://badge.fury.io/js/%40webviewkit%2Fbridge.svg)](https://badge.fury.io/js/%40webviewkit%2Fbridge)
 
-#### Features:
+#### Key Features:
 
 - Type-safe communication between WebView and native platforms
 - Intelligent version-aware API handling
 - Support for iOS, Android, and React Native
 - Customizable error handling
-- Flexible request and response handlers
 - Automatic selection of the most appropriate handler based on semantic versioning
 
-For more details, check out the [@webviewkit/bridge README](./packages/bridge/README.md).
+[Learn more about @webviewkit/bridge](./packages/bridge/README.md)
+
+### [@webviewkit/bridgedocs](./packages/bridgedocs)
+
+An automatic documentation generator for WebView bridge interfaces, designed to work seamlessly with @webviewkit/bridge.
+
+#### Key Features:
+
+- Automatic generation of API documentation for WebView bridge interfaces
+- Support for Markdown and JSON output formats
+- Customizable configuration for include/exclude directories
+- Seamless integration with TypeScript projects
+
+[Learn more about @webviewkit/bridgedocs](./packages/bridgedocs/README.md)
 
 ## Getting Started
 
 To get started with WebViewKit, you can install the packages you need using npm, yarn, or pnpm:
 
 ```bash
-npm install @webviewkit/environment @webviewkit/bridge
+npm install @webviewkit/environment @webviewkit/bridge @webviewkit/bridgedocs
 # or
-yarn add @webviewkit/environment @webviewkit/bridge
+yarn add @webviewkit/environment @webviewkit/bridge @webviewkit/bridgedocs
 # or
-pnpm add @webviewkit/environment @webviewkit/bridge
+pnpm add @webviewkit/environment @webviewkit/bridge @webviewkit/bridgedocs
 ```
 
 ## Contributing
